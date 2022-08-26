@@ -1,0 +1,22 @@
+{
+  "name": "coin_lister",
+  "version": "1.0.0",
+  "description": "Serverless Application that created with SAM",
+  "main": "app.js",
+  "repository": "",
+  "author": "ozersubasi",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "coingecko-api": "^1.0.10",
+    "uuid": "^8.3.2"
+  },
+  "scripts": {
+    "test": "mocha tests/unit/"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.1202.0",
+    "chai": "^4.2.0",
+    "mocha": "^9.1.4"
+  }
+}

@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  aws-sam-coin-lister
+
+  SAM Template for coin-lister 
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  ListCoinsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      CacheClusterEnabled: true
+      CacheClusterSize: '0.5'
+      MethodSettings:
+        - ResourcePath: /coins/list
+          HttpMethod: GET
+          CachingEnabled: true
+          CacheTtlInSeconds: 300
+  ListCoinsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: list-coins/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Policies: 
+        - DynamoDBWritePolicy:
+            TableName: !Ref CoinListerDDBTable
+      Environment:
+        Variables:
+          COINLIST_TABLE: !Ref CoinListerDDBTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /coins/list
+            Method: get
+            RestApiId:
+              Ref: ListCoinsApi
+  CoinListerDDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: coinsListTable
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  CrudLambdaIAMRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+          Path: "/"
+          AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "sts:AssumeRole"
+                Principal:
+                  Service:
+                    - "lambda.amazonaws.com"
+                    - "apigateway.amazonaws.com"
+  CrudLambdaPolicy:
+    Type: "AWS::IAM::Policy"
+    DependsOn: [CrudLambdaIAMRole]
+    Properties:
+      PolicyName: CrudLambdaPolicy
+      Roles: [!Ref CrudLambdaIAMRole]
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action: [
+            "ec2:DescribeNetworkInterfaces",
+            "ec2:CreateNetworkInterface",
+            "ec2:DeleteNetworkInterface",
+            "dynamodb:BatchGetItem",
+            "dynamodb:BatchWriteItem",
+            "dynamodb:DeleteItem",
+            "dynamodb:GetItem",
+            "dynamodb:PutItem",
+            "dynamodb:Query",
+            "dynamodb:Scan",
+            "dynamodb:UpdateItem"
+
+          ]
+          Resource: ["*"]
+Outputs:
+  ListCoinsApi:
+    Description: "API Gateway endpoint URL for Prod stage for List Coins function"
+    Value: !Sub "https://${ListCoinsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/coins/list"
+  ListCoinsFunction:
+    Description: "List Coins Lambda Function ARN"
+    Value: !GetAtt ListCoinsFunction.Arn
+  ListCoinsFunctionIamRole:
+    Description: "Implicit IAM Role created for List Coins function"
+    Value: !GetAtt ListCoinsFunctionRole.Arn
+  ListCoinsApiUrl:
+    Description: Endpoint URL
+    Value: !Sub "https://${ListCoinsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
