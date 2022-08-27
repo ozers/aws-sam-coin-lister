@@ -1,5 +1,7 @@
 # aws-sam-coin-lister
 
+![aws-sam-coin-lister-diagram](https://user-images.githubusercontent.com/22887208/187029997-326a04a1-d628-4625-8527-e0ef297ed449.jpeg)
+
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
 
 - list-coins - Code for the application's Lambda function.
