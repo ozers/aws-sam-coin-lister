@@ -54,45 +54,6 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
-  CrudLambdaIAMRole:
-      Type: "AWS::IAM::Role"
-      Properties:
-          Path: "/"
-          AssumeRolePolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              -
-                Effect: "Allow"
-                Action:
-                  - "sts:AssumeRole"
-                Principal:
-                  Service:
-                    - "lambda.amazonaws.com"
-                    - "apigateway.amazonaws.com"
-  CrudLambdaPolicy:
-    Type: "AWS::IAM::Policy"
-    DependsOn: [CrudLambdaIAMRole]
-    Properties:
-      PolicyName: CrudLambdaPolicy
-      Roles: [!Ref CrudLambdaIAMRole]
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Action: [
-            "ec2:DescribeNetworkInterfaces",
-            "ec2:CreateNetworkInterface",
-            "ec2:DeleteNetworkInterface",
-            "dynamodb:BatchGetItem",
-            "dynamodb:BatchWriteItem",
-            "dynamodb:DeleteItem",
-            "dynamodb:GetItem",
-            "dynamodb:PutItem",
-            "dynamodb:Query",
-            "dynamodb:Scan",
-            "dynamodb:UpdateItem"
-
-          ]
-          Resource: ["*"]
 Outputs:
   ListCoinsApi:
     Description: "API Gateway endpoint URL for Prod stage for List Coins function"
