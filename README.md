@@ -39,6 +39,47 @@ cd aws-sam-coin-lister/list-coins && npm install && cd ..
 sam build && sam deploy --guided
 ```
 
+## 🧪 Local Development
+
+### Method 1: Using SAM Local API
+
+```bash
+# Start local API
+sam local start-api
+
+# Test endpoints using curl
+curl http://localhost:3000/coins/list
+curl http://localhost:3000/coins/bitcoin
+curl http://localhost:3000/coins/bitcoin/history
+```
+
+### Method 2: Using Postman Collection
+
+1. Import the Postman collection:
+   ```bash
+   # Collection location
+   docs/aws-sam-coin-lister.postman_collection.json
+   ```
+
+2. Set up environment variables in Postman:
+   - `baseUrl`: `http://localhost:3000` (for local testing)
+   - `prodUrl`: `https://{api-id}.execute-api.{region}.amazonaws.com/Prod` (for production)
+
+3. Available requests:
+   - List All Coins: `GET {{baseUrl}}/coins/list?page=1&per_page=100`
+   - Get Coin Details: `GET {{baseUrl}}/coins/bitcoin`
+   - Get Coin History: `GET {{baseUrl}}/coins/bitcoin/history`
+
+### Method 3: Using Event Files
+
+```bash
+# Test with event file
+sam local invoke ListCoinsFunction -e events/event.json
+
+# Available test event
+events/event.json           # List coins
+```
+
 ## 🌐 API Endpoints
 
 | Endpoint | Method | Cache TTL | Description |
@@ -73,6 +114,7 @@ curl https://{api-id}.execute-api.{region}.amazonaws.com/Prod/coins/bitcoin
 * AWS Account & SAM CLI
 * Node.js 18.x
 * Docker (optional)
+* Postman (optional, for API testing)
 
 ## 🧹 Cleanup
 
@@ -100,8 +142,8 @@ aws cloudformation describe-stacks --stack-name sam-app
 ## 📧 Contact
 
 * [GitHub](https://github.com/ozers)
-* [LinkedIn](https://linkedin.com/in/ozersubasi)
-* [Email](mailto:ozer@example.com)
+* [LinkedIn](https://linkedin.com/in/ozer)
+* [Email](mailto:ozersubasi.dev@gmail.com)
 
 ---
 
