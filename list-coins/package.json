@@ -7,16 +7,19 @@
   "author": "ozersubasi",
   "license": "MIT",
   "dependencies": {
+    "aws-sdk": "^2.1202.0",
     "axios": "^0.21.1",
-    "coingecko-api": "^1.0.10",
+    "coingecko-api-v3": "^0.0.29",
     "uuid": "^8.3.2"
   },
   "scripts": {
     "test": "mocha tests/unit/"
   },
   "devDependencies": {
-    "aws-sdk": "^2.1202.0",
-    "chai": "^4.2.0",
-    "mocha": "^9.1.4"
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.13",
+    "chai": "^4.5.0",
+    "mocha": "^9.2.2",
+    "sinon": "^20.0.0"
   }
 }

@@ -7,44 +7,84 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 30
+    MemorySize: 512
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref CoinListerDDBTable
+        DYNAMODB_ENDPOINT: http://host.docker.internal:8000
+        COINGECKO_API_KEY: CG-1234567890abcdef # Replace with your actual CoinGecko API key
 
 Resources:
   ListCoinsApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: prod
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: NONE
       CacheClusterEnabled: true
       CacheClusterSize: '0.5'
       MethodSettings:
+        - ResourcePath: /ping
+          HttpMethod: GET
+          CachingEnabled: true
+          CacheTtlInSeconds: 300   # 5 dakika cache
         - ResourcePath: /coins/list
           HttpMethod: GET
           CachingEnabled: true
-          CacheTtlInSeconds: 300
+          CacheTtlInSeconds: 1800  # 30 dakika cache
+        - ResourcePath: /coins/{coinId}
+          HttpMethod: GET
+          CachingEnabled: true
+          CacheTtlInSeconds: 300   # 5 dakika cache
+        - ResourcePath: /coins/{coinId}/history
+          HttpMethod: GET
+          CachingEnabled: true
+          CacheTtlInSeconds: 3600  # 1 saat cache
+
   ListCoinsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: list-coins/
-      Handler: app.lambdaHandler
-      Runtime: nodejs14.x
-      Policies: 
-        - DynamoDBWritePolicy:
+      Handler: app.handler
+      Runtime: nodejs18.x
+      Architectures: [arm64]
+      Policies:
+        - DynamoDBCrudPolicy:
             TableName: !Ref CoinListerDDBTable
       Environment:
         Variables:
           COINLIST_TABLE: !Ref CoinListerDDBTable
       Events:
-        ApiEvent:
+        Ping:
           Type: Api
           Properties:
+            RestApiId: !Ref ListCoinsApi
+            Path: /ping
+            Method: get
+        ListCoins:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ListCoinsApi
             Path: /coins/list
             Method: get
-            RestApiId:
-              Ref: ListCoinsApi
+        GetCoinDetails:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ListCoinsApi
+            Path: /coins/{coinId}
+            Method: get
+        GetCoinHistory:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ListCoinsApi
+            Path: /coins/{coinId}/history
+            Method: get
+
   CoinListerDDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: coinsListTable
+      TableName: CoinListerDDBTable
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -52,12 +92,22 @@ Resources:
         - AttributeName: id
           KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
 Outputs:
   ListCoinsApi:
-    Description: "API Gateway endpoint URL for Prod stage for List Coins function"
+    Description: "API Gateway endpoint URL for Prod stage"
     Value: !Sub "https://${ListCoinsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/coins/list"
+  GetCoinDetailsApi:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ListCoinsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/coins/{coinId}"
+  GetCoinHistoryApi:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ListCoinsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/coins/{coinId}/history"
+  PingApi:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ListCoinsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/ping"
   ListCoinsFunction:
     Description: "List Coins Lambda Function ARN"
     Value: !GetAtt ListCoinsFunction.Arn
@@ -65,5 +115,5 @@ Outputs:
     Description: "Implicit IAM Role created for List Coins function"
     Value: !GetAtt ListCoinsFunctionRole.Arn
   ListCoinsApiUrl:
-    Description: Endpoint URL
+    Description: "Base API URL"
     Value: !Sub "https://${ListCoinsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "AWS SAM Coin Lister API",
+    "description": "API collection for AWS SAM Coin Lister application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List All Coins",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/coins/list?page=1&per_page=100",
+          "host": ["{{baseUrl}}"],
+          "path": ["coins", "list"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "per_page",
+              "value": "100",
+              "description": "Number of items per page (default: 100)"
+            }
+          ]
+        },
+        "description": "Get a paginated list of all available coins with their current market data, prices, and supported currencies"
+      }
+    },
+    {
+      "name": "Get Coin Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/coins/bitcoin",
+          "host": ["{{baseUrl}}"],
+          "path": ["coins", "bitcoin"]
+        },
+        "description": "Get detailed information about a specific coin including current price and market data"
+      }
+    },
+    {
+      "name": "Get Coin History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/coins/bitcoin/history",
+          "host": ["{{baseUrl}}"],
+          "path": ["coins", "bitcoin", "history"]
+        },
+        "description": "Get historical price data for a specific coin (returns yesterday's data)"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string",
+      "description": "Base URL for local development"
+    },
+    {
+      "key": "prodUrl",
+      "value": "https://your-api-id.execute-api.region.amazonaws.com/Prod",
+      "type": "string",
+      "description": "Base URL for production environment"
+    }
+  ]
+} 
