@@ -28,33 +28,30 @@ Resources:
         - ResourcePath: /ping
           HttpMethod: GET
           CachingEnabled: true
-          CacheTtlInSeconds: 300   # 5 dakika cache
+          CacheTtlInSeconds: 300   # 5 min cache
         - ResourcePath: /coins/list
           HttpMethod: GET
           CachingEnabled: true
-          CacheTtlInSeconds: 1800  # 30 dakika cache
+          CacheTtlInSeconds: 1800  # 30 min cache
         - ResourcePath: /coins/{coinId}
           HttpMethod: GET
           CachingEnabled: true
-          CacheTtlInSeconds: 300   # 5 dakika cache
+          CacheTtlInSeconds: 300   # 5 min cache
         - ResourcePath: /coins/{coinId}/history
           HttpMethod: GET
           CachingEnabled: true
-          CacheTtlInSeconds: 3600  # 1 saat cache
+          CacheTtlInSeconds: 3600  # 1 hour cache
 
   ListCoinsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: list-coins/
       Handler: app.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Architectures: [arm64]
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref CoinListerDDBTable
-      Environment:
-        Variables:
-          COINLIST_TABLE: !Ref CoinListerDDBTable
       Events:
         Ping:
           Type: Api

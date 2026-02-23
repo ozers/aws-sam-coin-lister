@@ -1,4 +1,4 @@
-const { listCoins, getCoinById, getCoinHistory } = require('./services/coinService');
+const coinService = require('./services/coinService');
 const { createSuccessResponse, createErrorResponse } = require('./utils/responseUtils');
 
 // Lambda handler
@@ -22,7 +22,7 @@ exports.handler = async (event) => {
                 return createErrorResponse(400, 'Invalid pagination parameters');
             }
             
-            const coins = await listCoins(page, perPage);
+            const coins = await coinService.listCoins(page, perPage);
             return createSuccessResponse(coins);
         }
 
@@ -31,7 +31,7 @@ exports.handler = async (event) => {
         if (coinIdMatch) {
             const coinId = coinIdMatch[1];
             try {
-                const coin = await getCoinById(coinId);
+                const coin = await coinService.getCoinById(coinId);
                 return createSuccessResponse(coin);
             } catch (error) {
                 if (error.message.includes('Failed to fetch data')) {
@@ -54,7 +54,7 @@ exports.handler = async (event) => {
             
             const date = dateStr ? new Date(dateStr) : new Date();
             try {
-                const history = await getCoinHistory(coinId, date);
+                const history = await coinService.getCoinHistory(coinId, date);
                 return createSuccessResponse(history);
             } catch (error) {
                 if (error.message.includes('Failed to get history data')) {

@@ -1,30 +1,34 @@
-const AWS = require('aws-sdk');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
 
 // Initialize AWS DynamoDB
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const TABLE_NAME = 'CoinGeckoCache';
+const client = new DynamoDBClient({});
+const dynamodb = DynamoDBDocumentClient.from(client);
+const TABLE_NAME = process.env.TABLE_NAME || 'CoinGeckoCache';
 
 // Cache configuration
 const CACHE_TTL = 3600; // 1 hour in seconds
 
 const getCache = async (key) => {
     try {
-        const params = {
+        const result = await dynamodb.send(new GetCommand({
             TableName: TABLE_NAME,
-            Key: { id: key }
-        };
-        const result = await dynamodb.get(params).promise();
-        
+            Key: { id: key },
+        }));
+
         if (!result.Item) return null;
-        
+
         const { data, timestamp } = result.Item;
         const now = Math.floor(Date.now() / 1000);
-        
+
         if (now - timestamp > CACHE_TTL) {
-            await dynamodb.delete(params).promise();
+            await dynamodb.send(new DeleteCommand({
+                TableName: TABLE_NAME,
+                Key: { id: key },
+            }));
             return null;
         }
-        
+
         return data;
     } catch (error) {
         console.error('Cache read error:', error);
@@ -34,15 +38,14 @@ const getCache = async (key) => {
 
 const setCache = async (key, data) => {
     try {
-        const params = {
+        await dynamodb.send(new PutCommand({
             TableName: TABLE_NAME,
             Item: {
                 id: key,
                 data,
-                timestamp: Math.floor(Date.now() / 1000)
-            }
-        };
-        await dynamodb.put(params).promise();
+                timestamp: Math.floor(Date.now() / 1000),
+            },
+        }));
     } catch (error) {
         console.error('Cache write error:', error);
     }
@@ -51,5 +54,5 @@ const setCache = async (key, data) => {
 module.exports = {
     getCache,
     setCache,
-    CACHE_TTL
-}; 
+    CACHE_TTL,
+};

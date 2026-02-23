@@ -1,7 +1,7 @@
 # 🪙 AWS SAM Coin Lister
 
 [![AWS SAM](https://img.shields.io/badge/AWS-SAM-orange?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/serverless/sam/)
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-green?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/ozers/aws-sam-coin-lister/graphs/commit-activity)
@@ -107,12 +107,12 @@ curl https://{api-id}.execute-api.{region}.amazonaws.com/Prod/coins/bitcoin
 * 🟦 **Serverless**: AWS SAM, Lambda, API Gateway
 * 💾 **Cache**: DynamoDB
 * 📊 **Data**: CoinGecko API
-* 🧪 **Testing**: Jest
+* 🧪 **Testing**: Mocha + Chai
 
 ## 📋 Prerequisites
 
 * AWS Account & SAM CLI
-* Node.js 18.x
+* Node.js 20.x
 * Docker (optional)
 * Postman (optional, for API testing)
 

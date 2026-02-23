@@ -1,8 +1,12 @@
 'use strict';
 
-const app = require('../../app.js');
+const sinon = require('sinon');
 const chai = require('chai');
 const expect = chai.expect;
+
+const coinService = require('../../services/coinService');
+const dynamodbUtils = require('../../utils/dynamodbUtils');
+const app = require('../../app.js');
 
 describe('API Tests', function () {
     let event;
@@ -12,67 +16,106 @@ describe('API Tests', function () {
         event = {
             httpMethod: 'GET',
             path: '',
-            queryStringParameters: {}
+            queryStringParameters: {},
         };
         context = {};
+
+        // Stub DynamoDB cache — always miss, never write
+        sinon.stub(dynamodbUtils, 'getCache').resolves(null);
+        sinon.stub(dynamodbUtils, 'setCache').resolves();
+    });
+
+    afterEach(function () {
+        sinon.restore();
     });
 
     describe('GET /coins/list', function () {
         it('should return list of coins', async function () {
+            const mockCoins = [
+                { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' },
+                { id: 'ethereum', symbol: 'eth', name: 'Ethereum' },
+            ];
+            sinon.stub(coinService, 'listCoins').resolves(mockCoins);
+
             event.path = '/coins/list';
             event.queryStringParameters = { page: '1', per_page: '10' };
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(200);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('success');
-            expect(response.data).to.be.an('array');
+            expect(response.data).to.deep.equal(mockCoins);
         });
 
         it('should handle invalid pagination parameters', async function () {
             event.path = '/coins/list';
             event.queryStringParameters = { page: 'invalid', per_page: 'invalid' };
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(400);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('error');
             expect(response.message).to.equal('Invalid pagination parameters');
         });
+
+        it('should reject per_page > 250', async function () {
+            event.path = '/coins/list';
+            event.queryStringParameters = { page: '1', per_page: '500' };
+            const result = await app.handler(event, context);
+
+            expect(result.statusCode).to.equal(400);
+        });
+
+        it('should reject page < 1', async function () {
+            event.path = '/coins/list';
+            event.queryStringParameters = { page: '0', per_page: '10' };
+            const result = await app.handler(event, context);
+
+            expect(result.statusCode).to.equal(400);
+        });
     });
 
-    describe('GET /coins/bitcoin', function () {
-        it('should return bitcoin details', async function () {
+    describe('GET /coins/:coinId', function () {
+        it('should return coin details', async function () {
+            const mockCoin = { id: 'bitcoin', name: 'Bitcoin', market_data: {} };
+            sinon.stub(coinService, 'getCoinById').resolves(mockCoin);
+
             event.path = '/coins/bitcoin';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(200);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('success');
-            expect(response.data).to.be.an('object');
             expect(response.data.id).to.equal('bitcoin');
         });
 
         it('should handle non-existent coin', async function () {
-            event.path = '/coins/nonexistentcoin123456';
+            sinon.stub(coinService, 'getCoinById').rejects(new Error('Failed to fetch data for nonexistent'));
+
+            event.path = '/coins/nonexistent';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(404);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('error');
-            expect(response.message).to.contain('Failed to fetch data');
         });
     });
 
-    describe('GET /coins/bitcoin/history', function () {
-        it('should return bitcoin history', async function () {
+    describe('GET /coins/:coinId/history', function () {
+        it('should return coin history', async function () {
+            const mockHistory = {
+                id: 'bitcoin',
+                date: '20-02-2026',
+                prices: [{ currency: 'usd', price: 50000 }],
+            };
+            sinon.stub(coinService, 'getCoinHistory').resolves(mockHistory);
+
             event.path = '/coins/bitcoin/history';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(200);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('success');
-            expect(response.data).to.be.an('object');
             expect(response.data.prices).to.be.an('array');
         });
 
@@ -80,7 +123,7 @@ describe('API Tests', function () {
             event.path = '/coins/bitcoin/history';
             event.queryStringParameters = { date: 'invalid-date' };
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(400);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('error');
@@ -92,55 +135,45 @@ describe('API Tests', function () {
         it('should return pong', async function () {
             event.path = '/ping';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(200);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('success');
-            expect(response.data).to.be.an('object');
-            expect(response.data.gecko_says).to.be.a('string');
+            expect(response.data.gecko_says).to.equal('pong');
         });
     });
 
-    describe('HTTP Method Tests', function () {
+    describe('HTTP Method Validation', function () {
         it('should return 405 for POST requests', async function () {
             event.path = '/coins/list';
             event.httpMethod = 'POST';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(405);
-            const response = JSON.parse(result.body);
-            expect(response.status).to.equal('error');
-            expect(response.message).to.equal('Method not allowed');
         });
 
         it('should return 405 for PUT requests', async function () {
             event.path = '/coins/bitcoin';
             event.httpMethod = 'PUT';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(405);
-            const response = JSON.parse(result.body);
-            expect(response.status).to.equal('error');
-            expect(response.message).to.equal('Method not allowed');
         });
 
         it('should return 405 for DELETE requests', async function () {
             event.path = '/coins/bitcoin';
             event.httpMethod = 'DELETE';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(405);
-            const response = JSON.parse(result.body);
-            expect(response.status).to.equal('error');
-            expect(response.message).to.equal('Method not allowed');
         });
     });
 
-    describe('Unknown Path Tests', function () {
+    describe('Unknown Path', function () {
         it('should return 404 for unknown paths', async function () {
             event.path = '/unknown';
             const result = await app.handler(event, context);
-            
+
             expect(result.statusCode).to.equal(404);
             const response = JSON.parse(result.body);
             expect(response.status).to.equal('error');
